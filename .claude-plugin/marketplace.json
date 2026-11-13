@@ -1,0 +1,11 @@
+{
+  "name": "snyderb-mods",
+  "owner": { "name": "Bryan Snyder" },
+  "plugins": [
+    {
+      "name": "session-monitor",
+      "source": "./",
+      "description": "Session HUD side pane: tasks, shells, subagents, skills, MCP and context use for this session"
+    }
+  ]
+}

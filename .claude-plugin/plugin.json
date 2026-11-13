@@ -1,0 +1,1 @@
+{ "name": "session-monitor", "version": "0.7.1", "description": "Session HUD side pane: vitals and shells across every open session (with a long-shell flag); tasks, child sessions, subagents, skills and MCP for this one", "types": "./types/index.d.ts" }

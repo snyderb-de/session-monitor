@@ -1,0 +1,4 @@
+# Written by `claude plugin validate` and the engine; never source.
+**/tsconfig.json
+**/.claude-plugin/types/
+node_modules/
