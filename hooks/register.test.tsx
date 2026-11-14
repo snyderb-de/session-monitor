@@ -224,6 +224,39 @@ test('the pane totals every session, flags a long shell, and lists only child se
   }
 })
 
+test('the options hide every panel but the vitals', { options: { showTasks: false, showShells: false, showAgents: false, showSkills: false, showMcp: false } }, async ($, on) => {
+  const child = reg('child-1', 'Fix the parser', { status: 'busy' })
+  const { clock } = world(on, { [`children:${ME}`]: [spawned('Fix the parser')], 'pulse:other-1': pulse('Unrelated work', { shells: [{ id: 's1', command: 'pnpm build --watch', startedAt: NOW - 60_000, status: 'running' }] }) }, [child, reg('other-1', 'Unrelated work')])
+  await start($, clock)
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  expect(await ui.find({ type: 'Text', text: /CTX/ })).toBeTruthy()
+  for (const label of [/TASKS/, /SHELLS/, /AGENTS/, /SKILLS/, /MCP/, /Fix the parser/, /pnpm build --watch/]) {
+    expect(await ui.find({ type: 'Text', text: label })).toBeFalsy()
+  }
+  await ui.unmount()
+})
+
+test('hiding tasks leaves the shells panel', { options: { showTasks: false } }, async ($, on) => {
+  const { clock } = world(on, { 'pulse:other-1': pulse('Unrelated work', { shells: [{ id: 's1', command: 'pnpm build --watch', startedAt: NOW - 60_000, status: 'running' }] }) }, [reg('other-1', 'Unrelated work')])
+  await start($, clock)
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  expect(await ui.find({ type: 'Text', text: /TASKS/ })).toBeFalsy()
+  expect(await ui.find({ type: 'Text', text: /pnpm build --watch/ })).toBeTruthy()
+  await ui.unmount()
+})
+
+test('/session-monitor help lists each panel option with its value', { options: { showMcp: false } }, async ($, on) => {
+  const { clock } = world(on, {})
+  await start($, clock)
+
+  const { text } = await $.command.run({ command: 'session-monitor', args: 'help', origin: { kind: 'plugin', name: 'session-monitor' }, presentation: { isFullscreen: false, columns: 80 } })
+  expect(text).toMatch(/showTasks\s+.*on/)
+  expect(text).toMatch(/showMcp\s+.*off/)
+  expect(text).toMatch(/hooks\/register\.tsx/)
+})
+
 test('a checklist draws gated 🔒, approved 🔓, doing ▶️ and done ✅', async ($, on) => {
   const { clock } = world(on, {}, [], [], {
     title: 'plan',

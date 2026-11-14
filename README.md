@@ -1,8 +1,8 @@
 # session-monitor
 
 A Claude Code mod that docks a side pane (about 400 px, 50 columns), the
-"Session HUD". It replaces the bottom status line (`configs/claude/statusline.sh`,
-removed) and keeps its style: Tokyo Night colours and emoji labels. Every bar
+"Session HUD". It replaces the bottom status line and keeps its style: Tokyo
+Night colours and emoji labels. Every bar
 runs the full width of the pane on its own row. On the desktop, whose pane is
 set in a proportional face, a bar is an SVG stretched to the slot; on the
 terminal it is a line of box-drawing glyphs (`━━━┃───`), which every font
@@ -63,7 +63,25 @@ step is cleared; the HUD only draws what it is given.
 The pane opens unasked from 144 terminal columns, or from 110 once it has been
 opened by hand. Skills and MCP calls are counted from when the mod loads.
 
-This mod replaces the separate `task-progress` mod, which it absorbed.
+## Install
 
-It is installed for every session from the `my-mods` marketplace
-(`home/modules/claude-mods.nix`).
+Type this at the prompt of a Claude Code terminal session:
+
+```bash
+/plugin install session-monitor --marketplace snyderb-de/session-monitor
+```
+
+Answer `y` to add the marketplace, then pick a scope. The pane opens on the next
+`/session-monitor`.
+
+## Options and help
+
+Each panel can be hidden in `/config`: `showTasks` (tasks, checklist and child
+sessions), `showShells`, `showAgents`, `showSkills` and `showMcp`. All default to
+on. The header and vitals always show.
+
+`/session-monitor help` lists the panels with their current values and what each
+mark means.
+
+To change the emojis or colours, edit the `C` palette and the section icons in
+`hooks/register.tsx`.

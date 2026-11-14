@@ -1,5 +1,5 @@
 import { atom, read, update } from 'claude-code'
-import type { EngineInterface, Register, SessionContextBreakdown, SessionRateLimit } from 'claude-code'
+import type { EngineInterface, PluginOptions, Register, SessionContextBreakdown, SessionRateLimit } from 'claude-code'
 
 import type { Board, ChecklistFile, ChildRecord, ChildSession, Counts, Pulse, RegistryEntry, Sample, SessionEntry, Shell, TaskItem } from '../types'
 
@@ -41,7 +41,7 @@ const LONGER_MS = 30 * 60_000
 const LONGEST_MS = 60 * 60_000
 const HISTORY_MAX = 48
 
-// The status line's palette (configs/claude/statusline.sh), Tokyo Night.
+// Tokyo Night palette.
 const C = {
   cyan: '#7dcfff',
   teal: '#52d0c4',
@@ -471,7 +471,41 @@ async function readGit($: EngineInterface, cwd: string): Promise<Git | null> {
   return { dir, branch, ahead, behind, dirty, added, removed }
 }
 
-export const register: Register = on => {
+/** Text of `/session-monitor help`: the panel options with their current values, what the marks mean, and where the look is set. */
+const helpText = (options: PluginOptions) => {
+  const state = (key: string) => (options[key] !== false ? 'on' : 'off')
+  return [
+    '🧭 Session HUD · /session-monitor [help]',
+    '',
+    'Panels, on or off in /config (default on):',
+    `  📌 showTasks    tasks, checklist, child sessions   ${state('showTasks')}`,
+    `  🐚 showShells   shells in every session            ${state('showShells')}`,
+    `  🤖 showAgents   subagents of this session          ${state('showAgents')}`,
+    `  🧰 showSkills   skills loaded                      ${state('showSkills')}`,
+    `  🔌 showMcp      MCP servers and their call cost    ${state('showMcp')}`,
+    '  ⚡ vitals and the header always show.',
+    '',
+    'Marks:',
+    '  🐢 shell running 10 min or more, 🔥 1 h or more · ✅ done, 🛑 stopped',
+    '  ▶️ doing, 🔒 gated, 🔓 approved, ✅ done (checklist)',
+    '  ✉️ child session proposed, not started yet',
+    '  ┃ on a limit bar: how far through the window · 🚦 projected past 100%',
+    '',
+    'Emojis and colors: the C palette and the icon on each section in hooks/register.tsx.',
+    'Edit the plugin folder, then run /reload-plugins.',
+  ].join('\n')
+}
+
+/** Which panels the userConfig options show; a panel whose option is unset is shown. */
+const panelsShown = (options: PluginOptions) => ({
+  tasks: options.showTasks !== false,
+  shells: options.showShells !== false,
+  agents: options.showAgents !== false,
+  skills: options.showSkills !== false,
+  mcp: options.showMcp !== false,
+})
+
+export const register: Register = (on, options) => {
   on('session.start', async ($, e, next) => {
     await $.command.register({ name: 'session-monitor', description: 'Show the session HUD: status, limits, cost, tasks, context, shells, subagents, skills and MCP' })
     void $.ui.open({ id: PANE, title: TITLE, columns: PANE_COLUMNS })
@@ -498,7 +532,8 @@ export const register: Register = on => {
     return next(e)
   })
 
-  on('command.run', { command: 'session-monitor' }, async $ => {
+  on('command.run', { command: 'session-monitor' }, async ($, e) => {
+    if (e.args.trim() === 'help') return { text: helpText(options) }
     await $.ui.open({ id: PANE, title: TITLE, columns: PANE_COLUMNS })
     return { text: 'Session HUD opened.' }
   })
@@ -681,6 +716,7 @@ export const register: Register = on => {
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     const els = $.ui.resolve(e)
+    const shown = panelsShown(options)
     const { Box, Text } = els
     const frame = await read($, tick)
     const now = await $.clock.now()
@@ -878,6 +914,7 @@ export const register: Register = on => {
         )}
         </Box>
 
+        {shown.tasks && (<Box flexDirection="column">
         {/* ── TASKS ── */}
         <Rule els={els} icon="📌" label="TASKS" right={tasks.length > 0 ? `${tasksDone}/${tasks.length}` : undefined} rightColor={tasksDone === tasks.length ? C.green : C.teal} />
         <Box flexDirection="column" gap="xs">
@@ -925,6 +962,9 @@ export const register: Register = on => {
           </Box>
         )}
 
+        </Box>
+        )}
+        {shown.shells && (<Box flexDirection="column">
         {/* ── SHELLS: every open session; a long one is flagged ── */}
         <Rule
           els={els}
@@ -959,6 +999,9 @@ export const register: Register = on => {
         ))}
         </Box>
 
+        </Box>
+        )}
+        {shown.agents && (<Box flexDirection="column">
         {/* ── SUBAGENTS ── */}
         <Rule els={els} icon="🤖" label="AGENTS" right={liveAgents.length > 0 ? `${liveAgents.length} live` : undefined} rightColor={C.teal} />
         <Box flexDirection="column" gap="xs">
@@ -983,6 +1026,9 @@ export const register: Register = on => {
         ))}
         </Box>
 
+        </Box>
+        )}
+        {shown.skills && (<Box flexDirection="column">
         {/* ── SKILLS ── */}
         <Rule els={els} icon="🧰" label="SKILLS" right={skillLoads > 0 ? plural(skillLoads, 'load') : undefined} />
         <Box flexDirection="column" gap="xs">
@@ -997,6 +1043,9 @@ export const register: Register = on => {
         ))}
         </Box>
 
+        </Box>
+        )}
+        {shown.mcp && (<Box flexDirection="column">
         {/* ── MCP ── */}
         <Rule els={els} icon="🔌" label="MCP" right={mcpServers.length > 0 ? plural(mcpServers.length, 'server') : undefined} />
         <Box flexDirection="column" gap="xs">
@@ -1012,6 +1061,8 @@ export const register: Register = on => {
           </Box>
         ))}
         </Box>
+        </Box>
+        )}
       </Box>
     )
   })

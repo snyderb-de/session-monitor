@@ -1,11 +1,12 @@
 {
   "name": "snyderb-mods",
+  "description": "Claude Code mods by Bryan Snyder",
   "owner": { "name": "Bryan Snyder" },
   "plugins": [
     {
       "name": "session-monitor",
       "source": "./",
-      "description": "Session HUD side pane: tasks, shells, subagents, skills, MCP and context use for this session"
+      "description": "Session HUD side pane: vitals and shells across every open session (with a long-shell flag); tasks, child sessions, subagents, skills and MCP for this one"
     }
   ]
 }

@@ -1,1 +1,13 @@
-{ "name": "session-monitor", "version": "0.7.1", "description": "Session HUD side pane: vitals and shells across every open session (with a long-shell flag); tasks, child sessions, subagents, skills and MCP for this one", "types": "./types/index.d.ts" }
+{
+  "name": "session-monitor",
+  "version": "0.8.0",
+  "description": "Session HUD side pane: vitals and shells across every open session (with a long-shell flag); tasks, child sessions, subagents, skills and MCP for this one",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "showTasks": { "type": "boolean", "title": "Show tasks", "description": "Tasks, checklist and child sessions", "default": true },
+    "showShells": { "type": "boolean", "title": "Show shells", "description": "Shells across every open session", "default": true },
+    "showAgents": { "type": "boolean", "title": "Show agents", "description": "Subagents of this session", "default": true },
+    "showSkills": { "type": "boolean", "title": "Show skills", "description": "Skills loaded in this session", "default": true },
+    "showMcp": { "type": "boolean", "title": "Show MCP", "description": "MCP servers and their call cost", "default": true }
+  }
+}
