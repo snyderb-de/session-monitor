@@ -7,6 +7,8 @@ const PANE = 'session-monitor'
 const TITLE = '🧭 Session HUD'
 // About 400 px at a typical terminal cell width of 8 px.
 const PANE_COLUMNS = 50
+// A session id as it names a file: word characters and hyphens only.
+const SAFE_ID = /^[\w-]+$/
 // Change a tag when that value's fields change.
 const shells = atom({ plugin: 'session-monitor', key: 'shells' } as const, [], { shape: 'shells-1' })
 const skills = atom({ plugin: 'session-monitor', key: 'skills' } as const, {}, { shape: 'counts-1' })
@@ -293,6 +295,7 @@ async function load($: EngineInterface) {
   }
 
   const checklistOf = async (id: string) => {
+    if (!SAFE_ID.test(id)) return undefined
     try {
       return JSON.parse(await $.fs.read(`${await $.env.get('HOME')}/.claude/progress/${id}.json`)) as ChecklistFile
     } catch {
@@ -754,14 +757,17 @@ export const register: Register = (on, options) => {
       const id = await $.session.id()
       try {
         // /rename writes a custom-title record into the transcript; the last one wins.
-        const found = await $.process.run(['sh', '-c', `grep -h '"type":"custom-title"' "$HOME"/.claude/projects/*/${id}.jsonl 2>/dev/null | tail -1`])
+        // The id is passed as $1, never spliced into the script.
+        const found = SAFE_ID.test(id)
+          ? await $.process.run(['sh', '-c', 'grep -h \'"type":"custom-title"\' "$HOME"/.claude/projects/*/"$1".jsonl 2>/dev/null | tail -1', 'sh', id])
+          : { stdout: '' }
         const line = found.stdout.trim()
         if (line) value.title = (JSON.parse(line) as { customTitle?: string }).customTitle
       } catch {
         // No transcript yet, or the record is cut: the session stays unnamed.
       }
       try {
-        value.mode = (await $.fs.read(`${home}/.claude/.caveman-sessions/${id}.mode`)).trim() || 'off'
+        if (SAFE_ID.test(id)) value.mode = (await $.fs.read(`${home}/.claude/.caveman-sessions/${id}.mode`)).trim() || 'off'
         const log = await $.fs.read(`${home}/.claude/.caveman-history.jsonl`)
         for (const row of log.trim().split('\n').reverse()) {
           const entry = JSON.parse(row) as { session_id?: string; output_tokens?: number; turns?: number }
