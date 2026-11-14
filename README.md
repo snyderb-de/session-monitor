@@ -53,6 +53,12 @@ seconds means that session closed, and it drops out of the totals and the
 shell list. Sessions on an older version of the mod publish no pulse, so they
 do not show until they are restarted.
 
+The pulse includes each background shell's description, or the first 200
+characters of its command, and the session's working directory. Every session's
+pane shows them, and the store keeps them for 14 days. Keep secrets out of
+background commands: a token typed into a command line is stored in plain text
+on this machine.
+
 Checklist steps in `~/.claude/progress/<session id>.json` take a `status` of
 `gated` 🔒 (awaiting approval), `approved` 🔓 (cleared, not started), `doing` ▶️,
 `done` ✅ or `todo` ⬜. Whatever writes the file must set `approved` once the
@@ -63,6 +69,22 @@ step is cleared; the HUD only draws what it is given.
 The pane opens unasked from 144 terminal columns, or from 110 once it has been
 opened by hand. Skills and MCP calls are counted from when the mod loads.
 
+## What it reads
+
+Everything stays on this machine. Nothing is sent over a network.
+
+- `~/.claude/sessions/*.json`: open sessions, to find child sessions.
+- `~/.claude/progress/<session id>.json`: checklist steps.
+- `~/.claude/projects/*/<session id>.jsonl`: the custom title from `/rename`,
+  read with `grep`.
+- `~/.claude/.caveman-sessions/<session id>.mode` and
+  `~/.claude/.caveman-history.jsonl`: caveman mode, when that plugin is installed.
+- `ps`: whether a session's process is still running.
+- `git` in the session's folder: branch and uncommitted churn for the header.
+
+A session id with anything other than word characters or hyphens is refused
+before any file is read.
+
 ## Install
 
 Type this at the prompt of a Claude Code terminal session:
@@ -71,8 +93,8 @@ Type this at the prompt of a Claude Code terminal session:
 /plugin install session-monitor --marketplace snyderb-de/session-monitor
 ```
 
-Answer `y` to add the marketplace, then pick a scope. The pane opens on the next
-`/session-monitor`.
+Answer `y` to add the marketplace, then pick a scope. `/session-monitor` opens
+the pane.
 
 ## Options and help
 
